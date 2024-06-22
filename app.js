@@ -59,20 +59,6 @@ app.use(errorController.get404);
 mongoose
   .connect(MONGODB_URI)
   .then((result) => {
-    User.findOne() //With no args this sends the the first object in db
-      .then((user) => {
-        if (!user) {
-          //If user is not defined, create user
-          const user = new User({
-            name: "Dummy",
-            email: "test@test.com",
-            cart: { items: [] },
-          });
-          user.save();
-        }
-      })
-      .catch((err) => console.log("err in fetching one user"));
-
     app.listen(3000);
   })
   .catch((err) => {

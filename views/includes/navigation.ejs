@@ -24,7 +24,7 @@
                     <a class="<%= path === '/admin/add-product' ? 'active' : '' %>" href="/admin/add-product">Add Product
                     </a>
                 </li>
-                
+
                 <li class="main-header__item">
                     <a class="<%= path === '/admin/products' ? 'active' : '' %>" href="/admin/products">Admin Products
                     </a>
@@ -36,6 +36,10 @@
             <% if(!isAdmin) { %>
                 <li class="main-header__item">
                     <a class="<%= path === '/login' ? 'active' : '' %>" href="/login">Login</a>
+                </li>
+
+                <li class="main-header__item">
+                    <a class="<%= path === '/signup' ? 'active' : '' %>" href="/signup">Signup</a>
                 </li>
             <% } else { %>
                 <li class="main-header__item">
