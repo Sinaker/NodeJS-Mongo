@@ -6,6 +6,25 @@
     <%- include('../includes/navigation.ejs') %>
 
     <main>
+        <% if(successMsg.length> 0) { %>
+            <div style="display: flex" class="user-message user-message__success">
+        
+                <span style="flex-shrink: 0.5;" class="icon"><i class="fa-solid fa-circle-exclamation"></i></span>
+                <b>
+                    <%= (successMsg) ? successMsg : '' %>
+                </b>
+        
+                <span onClick="this.parentElement.classList.add('fade-out');
+
+                setTimeout(300, () => {
+                    this.parentElement.remove();
+                })
+                ">
+                    <i style="margin-right: 0.5rem; cursor: pointer;" class="fa-solid fa-xmark"></i>
+                </span>
+            </div>
+            <% } %>
+
         <% if (prods.length > 0) { %>
             <div class="grid">
                 <% for (let product of prods) { %>

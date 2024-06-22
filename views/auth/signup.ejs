@@ -7,6 +7,21 @@
         <%- include('../includes/navigation.ejs') %>
 
             <main>
+                <% if(errorMsg.length> 0) { %>
+                    <div style="display: flex" class="user-message user-message__danger">
+                        <span>
+                            <span class="danger_icon"><i class="fa-solid fa-circle-exclamation"></i></span>
+                            <b>
+                                <%= (errorMsg) ? errorMsg : '' %>
+                            </b>
+                        </span>
+                
+                        <span onClick="this.parentElement.style.display = 'none';">
+                            <i style="margin-right: 0.5rem; cursor: pointer;" class="fa-solid fa-xmark"></i>
+                        </span>
+                    </div>
+                    <% } %>
+                
                 <form class="signup-form" action="/signup" method="POST">
                     <div class="form-control">
                         <label for="email">E-Mail</label>
@@ -20,6 +35,7 @@
                         <label for="confirmPassword">Confirm Password</label>
                         <input type="password" name="confirmPassword" id="confirmPassword">
                     </div>
+                    <input type="hidden" name="_csrf" value="<%=csrfToken%>">
                     <button class="btn" type="submit">Sign Up!</button>
                 </form>
             </main>

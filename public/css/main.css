@@ -225,6 +225,49 @@ form {
   color: white;
 }
 
+.user-message {
+  position: absolute;
+  right: 1rem;
+  opacity: 1;
+
+  width:25%;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  padding: 0.8rem 1rem;
+  border-radius: 5px;
+  box-shadow: 2px 5px 10px rgba(0,0,0,0.5);
+  margin-bottom: 2rem;
+  /* display: none; */
+  font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+  transition: all 0.3s;
+}
+
+.user-message__danger {
+  border-left: 4px solid #fa6161;
+  background: linear-gradient(90deg,rgba(250, 97, 97, 0.15) 10%, rgba(250, 97, 97, 0.05));
+
+  .icon {
+    color: #f72e2e;
+    /* margin-right: 2rem; */
+  }
+} 
+
+.user-message__success {
+  border-left: 4px solid rgb(60, 179, 113);
+  background: linear-gradient(90deg, rgba(60, 179, 113, 0.15) 10%, rgba(60, 179, 113, 0.05));
+
+  .icon {
+    color: #34925e;
+    margin-right: 0.5rem
+  }
+}
+.fade-out {
+  opacity: 0;
+}
+
 @media (min-width: 768px) {
   .main-header__nav {
     display: flex;

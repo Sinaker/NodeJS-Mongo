@@ -5,7 +5,6 @@ exports.getAddProduct = (req, res, next) => {
     pageTitle: "Add Product",
     path: "/admin/add-product",
     editing: false,
-    isAdmin: req.session.isAdmin,
   });
 };
 
@@ -49,7 +48,6 @@ exports.getEditProduct = (req, res, next) => {
         path: "/admin/edit-product",
         editing: editMode,
         product: product,
-        isAdmin: req.session.isAdmin,
       });
     })
     .catch((err) => console.log(err));
@@ -86,7 +84,6 @@ exports.getProducts = (req, res, next) => {
         prods: products,
         pageTitle: "Admin Products",
         path: "/admin/products",
-        isAdmin: req.session.isAdmin,
       });
     })
     .catch((err) => console.log(err));

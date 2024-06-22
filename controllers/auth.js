@@ -6,43 +6,41 @@ exports.getLogin = (req, res, next) => {
   res.render("auth/login", {
     path: "/login",
     pageTitle: "Login",
-    isAdmin: req.session.isAdmin,
+    errorMsg: req.flash("Error"),
   });
 };
 
 exports.postLogin = (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
-  let fetched_user = null;
-
-  //A cookie can be said as  global variable restricited to only one user
-
-  //Based on the value of isAdmin we wish to show admin tabs, and set user only if logged in
   User.findOne({ email: email })
     .then((user) => {
-      if (!user) return res.redirect("/login");
-
-      fetched_user = user;
-      return bcryptjs.compare(password, user.password);
-    })
-    .then((isMatching) => {
-      if (isMatching) {
-        //password is matching
-        req.session.isAdmin = true; //Using session
-        req.session.user = fetched_user;
-        return req.session.save((err) => {
-          console.log(err);
-          res.redirect("/"); //Will redirect once session is saved
-        });
+      if (!user) {
+        req.flash("Error", "Invalid Email-ID");
+        return res.redirect("/login");
       }
-      res.redirect("/login"); //In case passwords are not matching
-    })
-    .catch((err) => {
-      console.log(err);
-      res.redirect("/login");
-    });
+      bcryptjs
+        .compare(password, user.password)
+        .then((doMatch) => {
+          if (doMatch) {
+            req.session.isAdmin = true;
+            req.session.user = user;
+            return req.session.save((err) => {
+              console.log(err);
 
-  //Note: If we had used req.isAdmin = true, this would have died as we finish the request hence we use cookies to have info that doesnt die
+              req.flash("Success", "Login Successful!");
+              res.redirect("/");
+            });
+          }
+          req.flash("Error", "Invalid Password");
+          return res.redirect("/login");
+        })
+        .catch((err) => {
+          console.log(err);
+          res.redirect("/login");
+        });
+    })
+    .catch((err) => console.log(err));
 };
 
 exports.postLogout = (req, res, next) => {
@@ -56,7 +54,7 @@ exports.getSignUp = (req, res, next) => {
   res.render("auth/signup", {
     path: "/signup",
     pageTitle: "Sign Up",
-    isAdmin: req.session.isAdmin,
+    errorMsg: req.flash("Error"),
   });
 };
 
@@ -74,6 +72,7 @@ exports.postSignUp = (req, res, next) => {
   User.findOne({ email: email })
     .then((user) => {
       if (user) {
+        req.flash("Error", "Email Already Exists!");
         return res.redirect("/signup");
       }
 
@@ -93,6 +92,6 @@ exports.postSignUp = (req, res, next) => {
     })
     .catch((err) => {
       console.log(err);
-      res.status(500).send("Server error");
+      res.status(500).send("Server Error");
     });
 };
