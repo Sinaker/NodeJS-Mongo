@@ -1,5 +1,21 @@
 const User = require("../models/user");
 const bcryptjs = require("bcryptjs");
+const nodemailer = require("nodemailer"); //Using Brevo
+const ejs = require("ejs");
+const path = require("path");
+const crypto = require("node:crypto");
+
+const p = path.join(__dirname, "..", "templates");
+
+const transporter = nodemailer.createTransport({
+  host: "live.smtp.mailtrap.io",
+  port: 587,
+  secure: false,
+  auth: {
+    user: process.env.MAILTRAP_USER,
+    pass: process.env.MAILTRAP_PASS,
+  },
+});
 
 exports.getLogin = (req, res, next) => {
   //A cookie is sent on every response, it can be accessed by
@@ -88,10 +104,153 @@ exports.postSignUp = (req, res, next) => {
       });
     })
     .then((result) => {
+      const emailData = {
+        companyName: "Shop-NodeJS",
+        firstName: email,
+        link1: "http://example.com/getting-started",
+        link2: "http://example.com/support",
+        link3: "http://example.com/community",
+        year: new Date().getFullYear(),
+        companyAddress: "123 Company St, City, Country",
+      };
+
+      ejs
+        .renderFile(path.join(p, "WelcomeEmail.ejs"), emailData)
+        .then((html) => {
+          const mailOptions = {
+            from: "info@demomailtrap.com",
+            to: process.env.EMAIL,
+            subject: "Thank you for using Shop!",
+            text:
+              "If you recieved this mail you have signed-in successfully!\nYour email is: " +
+              email,
+            html: html,
+          };
+
+          transporter
+            .sendMail(mailOptions)
+            .then((res) => console.log("Email sent " + res.response))
+            .catch((err) => console.log(err));
+        });
+
       res.redirect("/login");
     })
     .catch((err) => {
       console.log(err);
       res.status(500).send("Server Error");
     });
+};
+
+exports.getResetPass = (req, res, next) => {
+  res.render("auth/resetpass", {
+    path: "/resetpassword",
+    pageTitle: "Reset Your Password",
+    errorMsg: req.flash("Error"),
+  });
+};
+
+exports.postResetPass = (req, res, next) => {
+  crypto.randomBytes(32, (err, buffer) => {
+    if (err) {
+      console.log(err);
+      return res.redirect("/resetpassword");
+    }
+
+    const token = buffer.toString("hex");
+
+    User.findOne({ email: req.body.email })
+      .then((user) => {
+        if (!user) {
+          req.flash("Error", "No account exists with this user");
+          return res.redirect("/resetpassword");
+        }
+
+        user.resetToken = token;
+        user.resetTokenExpiration = Date.now() + 60 * 60 * 1000; //1 hr in milliseconds
+        return user.save();
+      })
+
+      .then((result) => {
+        res.redirect("/");
+        //If sucessful send mail to that email
+        const emailData = {
+          companyName: "Shop-NodeJS",
+          firstName: req.body.email,
+          resetLink: `http://localhost:3000/setpassword/${token}`,
+          year: new Date().getFullYear(),
+          companyAddress: "123 Company St, City, Country",
+        };
+
+        return ejs.renderFile(path.join(p, "PassRecovery.ejs"), emailData);
+      })
+
+      .then((html) => {
+        const mailOptions = {
+          from: "support@demomailtrap.com",
+          to: process.env.EMAIL,
+          subject: "Password Recovery for Shop-NodeJS",
+          html: html,
+        };
+        return transporter.sendMail(mailOptions);
+      })
+      .then((res) => console.log("Email sent " + res.response))
+      .catch((err) => console.log(err));
+  });
+};
+
+exports.getNewPass = (req, res, next) => {
+  const token = req.params.token;
+
+  User.findOne({
+    resetToken: token,
+    resetTokenExpiration: { $gt: Date.now() },
+  }) //CHecks current token and expiration date
+
+    .then((user) => {
+      if (!user) {
+        req.flash("Error", "Session Expired!");
+        return res.redirect("/resetpassword");
+      }
+
+      res.render("auth/newpass", {
+        path: "/setpassword",
+        pageTitle: "Set your new Password",
+        errorMsg: req.flash("Error"),
+        userID: user._id.toString(),
+        resetToken: token,
+      });
+    });
+};
+
+exports.postNewPass = (req, res, next) => {
+  const token = req.body.resetToken;
+  const userID = req.body.userID;
+  const newPass = req.body.password;
+  console.log(token, userID, newPass);
+  let fetched_user;
+
+  User.findOne({
+    _id: userID,
+    resetToken: token,
+    resetTokenExpiration: { $gt: Date.now() },
+  })
+    .then((user) => {
+      if (!user) {
+        req.flash("Error", "Invalid Token, please try again");
+        return res.redirect("/resetpassword");
+      }
+
+      fetched_user = user;
+      return bcryptjs.hash(newPass, 12);
+    })
+
+    .then((hashedPass) => {
+      fetched_user.password = hashedPass;
+      fetched_user.resetToken = null;
+      fetched_user.resetTokenExpiration = null;
+      return fetched_user.save();
+    })
+
+    .then(() => res.redirect("/login"))
+    .catch((err) => console.log(err));
 };
