@@ -1,0 +1,20 @@
+<section class="pagination">
+    <% if(currentPage> 1) { %>
+        <a class="prev_next" href="?page=<%= currentPage - 1 %>"> &lt; Previous</a>
+        <a href="?page=1">1</a> <!-- Lowest Index -->
+        <a>...</a>
+        <% } %>
+
+            <a class="active" href="?page=<%= currentPage %>">
+                <%= currentPage %>
+            </a>
+
+            <% if(currentPage < lastPage) { %>
+                <a>...</a>
+                <a href="?page=<%= lastPage %>">
+                    <%= lastPage %>
+                </a>
+                <a class="prev_next" href="?page=<%= currentPage + 1 %>">Next &gt; </a>
+                <% } %>
+
+</section>

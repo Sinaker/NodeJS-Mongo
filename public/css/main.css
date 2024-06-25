@@ -164,6 +164,7 @@ form {
 
 .card {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.26);
+  /* scale: 0.9; */
 }
 
 .card__header,
@@ -266,6 +267,26 @@ form {
 }
 .fade-out {
   opacity: 0;
+}
+
+.pagination {
+  text-align: center
+}
+
+.pagination a {
+  text-decoration: none;
+  box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.5);
+  padding: 0.125rem 0.5rem;
+  border: 1px solid #00695c;
+  border-radius: 2px;
+  margin: 5rem 0.5rem;
+  color: #00695c;
+  transition: all 0.3s;
+}
+
+.pagination a:hover, .pagination a.active {
+  color: white;
+  background-color: #00695c;
 }
 
 @media (min-width: 768px) {

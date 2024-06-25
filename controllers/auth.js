@@ -4,6 +4,7 @@ const nodemailer = require("nodemailer"); //Using Brevo
 const ejs = require("ejs");
 const path = require("path");
 const crypto = require("node:crypto");
+const { validationResult } = require("express-validator");
 
 const p = path.join(__dirname, "..", "templates");
 
@@ -23,18 +24,30 @@ exports.getLogin = (req, res, next) => {
     path: "/login",
     pageTitle: "Login",
     errorMsg: req.flash("Error"),
+    errors: [],
+    oldInput: { email: "", password: "" },
   });
 };
 
 exports.postLogin = (req, res, next) => {
+  const errors = validationResult(req);
   const email = req.body.email;
   const password = req.body.password;
+
+  if (!errors.isEmpty()) {
+    return res.status(422).render("auth/login", {
+      path: "/login",
+      pageTitle: "Login",
+      errorMsg: errors.array()[0].msg,
+      errors: errors.array(),
+      oldInput: { email: email, password: password },
+    });
+  }
+
   User.findOne({ email: email })
     .then((user) => {
-      if (!user) {
-        req.flash("Error", "Invalid Email-ID");
-        return res.redirect("/login");
-      }
+      //User will always exist cuz of our validation
+
       bcryptjs
         .compare(password, user.password)
         .then((doMatch) => {
@@ -48,15 +61,24 @@ exports.postLogin = (req, res, next) => {
               res.redirect("/");
             });
           }
-          req.flash("Error", "Invalid Password");
-          return res.redirect("/login");
+          return res.status(422).render("auth/login", {
+            path: "/login",
+            pageTitle: "Login",
+            errorMsg: "Incorrect Password",
+            errors: [{ path: "password" }],
+            oldInput: { email: req.body.email, password: req.body.password },
+          });
         })
         .catch((err) => {
           console.log(err);
           res.redirect("/login");
         });
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      next(error); //Activated error middleware
+    });
 };
 
 exports.postLogout = (req, res, next) => {
@@ -71,6 +93,12 @@ exports.getSignUp = (req, res, next) => {
     path: "/signup",
     pageTitle: "Sign Up",
     errorMsg: req.flash("Error"),
+    oldInput: {
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+    errors: [],
   });
 };
 
@@ -78,30 +106,38 @@ exports.postSignUp = (req, res, next) => {
   const email = req.body.email;
   const password = req.body.password;
   const cnfpassword = req.body.confirmPassword;
+  const errors = validationResult(req);
+  console.log(errors.array());
 
+  if (!errors.isEmpty()) {
+    return res.status(422).render("auth/signup", {
+      path: "/signup",
+      pageTitle: "Sign Up",
+      errorMsg: errors.array()[0].msg,
+      oldInput: {
+        email: email,
+        password: password,
+        confirmPassword: cnfpassword,
+      },
+      errors: errors.array(),
+    });
+  }
   // Check if passwords match
   if (password !== cnfpassword) {
     return res.redirect("/signup");
   }
 
-  // Check if the user already exists
-  User.findOne({ email: email })
-    .then((user) => {
-      if (user) {
-        req.flash("Error", "Email Already Exists!");
-        return res.redirect("/signup");
-      }
-
-      // Hash the password and save the new user
-      //The second arg shows the number of times algorithm should be applied
-      return bcryptjs.hash(password, 12).then((hashedPass) => {
-        const newUser = new User({
-          email: email,
-          password: hashedPass,
-          cart: { items: [] },
-        });
-        return newUser.save();
+  // Hash the password and save the new user
+  //The second arg shows the number of times algorithm should be applied
+  bcryptjs
+    .hash(password, 12)
+    .then((hashedPass) => {
+      const newUser = new User({
+        email: email,
+        password: hashedPass,
+        cart: { items: [] },
       });
+      return newUser.save();
     })
     .then((result) => {
       const emailData = {
@@ -130,14 +166,19 @@ exports.postSignUp = (req, res, next) => {
           transporter
             .sendMail(mailOptions)
             .then((res) => console.log("Email sent " + res.response))
-            .catch((err) => console.log(err));
+            .catch((err) => {
+              const error = new Error(err);
+              error.httpStatusCode = 500;
+              next(error); //Activated error middleware
+            });
         });
 
       res.redirect("/login");
     })
     .catch((err) => {
-      console.log(err);
-      res.status(500).send("Server Error");
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      next(error); //Activated error middleware
     });
 };
 
@@ -194,7 +235,11 @@ exports.postResetPass = (req, res, next) => {
         return transporter.sendMail(mailOptions);
       })
       .then((res) => console.log("Email sent " + res.response))
-      .catch((err) => console.log(err));
+      .catch((err) => {
+        const error = new Error(err);
+        error.httpStatusCode = 500;
+        next(error); //Activated error middleware
+      });
   });
 };
 
@@ -252,5 +297,9 @@ exports.postNewPass = (req, res, next) => {
     })
 
     .then(() => res.redirect("/login"))
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      next(error); //Activated error middleware
+    });
 };

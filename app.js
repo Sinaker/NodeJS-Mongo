@@ -9,6 +9,7 @@ const session = require("express-session");
 const MongoDBStore = require("connect-mongodb-session")(session);
 const csrf = require("csurf");
 const flash = require("connect-flash");
+const multer = require("multer");
 
 const MONGODB_URI = process.env.MONGODB_CONNECTION;
 
@@ -18,6 +19,25 @@ const app = express();
 const store = new MongoDBStore({ uri: MONGODB_URI, collection: "Session" });
 const csrufProtection = csrf();
 
+const fileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "images");
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
+
+const fileFilter = (req, file, cb) => {
+  if (
+    file.mimetype === "image/png" ||
+    file.mimetype === "image/jpg" ||
+    file.mimetype === "image/jpeg"
+  )
+    cb(null, true);
+  else cb(null, false);
+};
+
 app.set("view engine", "ejs");
 app.set("views", "views");
 
@@ -26,7 +46,16 @@ const shopRoutes = require("./routes/shop");
 const authRoutes = require("./routes/auth");
 
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(
+  multer({ storage: fileStorage, fileFilter: fileFilter }).single("image")
+);
+
+//Express serves these contents as if they were in the root
 app.use(express.static(path.join(__dirname, "public")));
+
+//Hence added 'images'
+app.use("/images", express.static(path.join(__dirname, "images")));
+//Make sure to add a '/' in the imageUrl to have absolute URL
 app.use(
   session({
     secret: process.env.SECRET,
@@ -43,17 +72,20 @@ const User = require("./models/user");
 app.use((req, res, next) => {
   if (!req.session.user) {
     //If session does not exist
-    next();
-  } else {
-    User.findById(req.session.user._id)
-      .then((user) => {
-        req.user = user; //Trying to
-        next();
-      })
-      .catch((err) => {
-        throw err;
-      });
+    return next();
   }
+  User.findById(req.session.user._id)
+    .then((user) => {
+      if (!user) return next();
+      req.user = user; //Trying to
+      next();
+    })
+    .catch((err) => {
+      console.log(err);
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      next(error); //Activated error middleware
+    });
 });
 
 app.use((req, res, next) => {
@@ -68,7 +100,16 @@ app.use("/admin", adminRoutes);
 app.use(shopRoutes);
 app.use(authRoutes);
 
+app.get("/500", errorController.get500);
 app.use(errorController.get404);
+
+app.use((error, req, res, next) => {
+  res.status(500).render("500", {
+    pageTitle: "Internal Error",
+    path: "/500",
+    isAdmin: false,
+  });
+}); //Special Error middleware
 
 mongoose
   .connect(MONGODB_URI)
@@ -76,5 +117,7 @@ mongoose
     app.listen(3000);
   })
   .catch((err) => {
-    console.log(err);
+    const error = new Error(err);
+    error.httpStatusCode = 500;
+    next(error); //Activated error middleware
   });

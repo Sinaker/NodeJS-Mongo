@@ -3,6 +3,7 @@
     max-width: 90%;
     margin: auto;
     display: block;
+    position: relative;
 }
 
 .product-item {
@@ -24,4 +25,18 @@
 
 .product__description {
     text-align: center;
+}
+
+.upload-button {
+    display: inline !important;
+    width: auto !important;
+    position: absolute;
+    left: 92%;
+    top: 24.25%;
+    color: #276a45;
+    background-color: rgb(250, 250, 250);
+    border-left: 1px solid gainsboro; 
+    padding: 0px 4px;
+    border-radius: 2px;
+
 }

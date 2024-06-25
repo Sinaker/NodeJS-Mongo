@@ -7,22 +7,50 @@
    <%- include('../includes/navigation.ejs') %>
 
     <main>
-        <form class="product-form" action="/admin/<% if (editing) { %>edit-product<% } else { %>add-product<% } %>" method="POST">
+        <% if(errorMsg.length> 0) { %>
+            <div style="display: flex" class="user-message user-message__danger">
+        
+                <span style="flex-shrink: 0.5;" class="icon"><i class="fa-solid fa-circle-exclamation"></i></span>
+                <b>
+                    <%= (errorMsg) ? errorMsg : '' %>
+                </b>
+        
+                <span onClick="this.parentElement.classList.add('fade-out');
+                                
+                                setTimeout(300, () => {
+                                    this.parentElement.remove();
+                                })
+                                ">
+                    <i style="margin-right: 0.5rem; cursor: pointer;" class="fa-solid fa-xmark"></i>
+                </span>
+            </div>
+            <% } %>
+            
+        <form class="product-form" action="/admin/<% if (editing) { %>edit-product<% } else { %>add-product<% } %>" method="POST" enctype="multipart/form-data">
             <div class="form-control">
                 <label for="title">Title</label>
-                <input type="text" name="title" id="title" value="<% if (editing) { %><%= product.title %><% } %>">
+
+                <input 
+                class="<%= errors.length > 0 ? (errors.find(error => error.path ==='title') ? 'invalid' : 'valid') : '' %>" 
+                type="text" 
+                name="title" 
+                id="title" 
+                value="<% if (editing || hasErrors) { %><%= product.title %><% } %>">
+
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             </div>
             <div class="form-control">
-                <label for="imageUrl">Image URL</label>
-                <input type="text" name="imageUrl" id="imageUrl" value="<% if (editing) { %><%= product.imageUrl %><% } %>">
+                <label for="image">Add Image</label>
+                    <input class="<%= errors.length > 0 ? (errors.find(error => error.path ==='price') ? 'invalid' : 'valid') : '' %>" type="file" name="image" id="image"> 
+                        
             </div>
             <div class="form-control">
                 <label for="price">Price</label>
-                <input type="number" name="price" id="price" step="0.01" value="<% if (editing) { %><%= product.price %><% } %>">
+                <input class="<%= errors.length > 0 ? (errors.find(error => error.path ==='price') ? 'invalid' : 'valid') : '' %>" type="number" name="price" id="price" step="0.01" value="<% if (editing || hasErrors) { %><%= product.price %><% } %>">
             </div>
             <div class="form-control">
                 <label for="description">Description</label>
-                <textarea name="description" id="description" rows="5"><% if (editing) { %><%= product.description %><% } %></textarea>
+                <textarea class="<%= errors.length > 0 ? (errors.find(error => error.path ==='description') ? 'invalid' : 'valid') : '' %>" name="description" id="description" rows="5"><% if (editing || hasErrors) { %><%= product.description %><% } %></textarea>
             </div>
             <% if (editing) { %>
                 <input type="hidden" value="<%= product._id %>" name="productId">

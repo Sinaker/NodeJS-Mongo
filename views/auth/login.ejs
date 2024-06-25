@@ -27,11 +27,21 @@
                     action="/login" method="POST">
                     <div class="form-control">
                         <label for="email">Email</label>
-                        <input type="email" name="email" id="email">
+                        <input 
+                        class="<%= errors.length > 0 ? (errors.find(error => error.path ==='email') ? 'invalid' : 'valid') : '' %>"
+                        type="email" 
+                        name="email" 
+                        id="email"
+                        value="<%= oldInput.email %>">
                     </div>
                     <div class="form-control">
                         <label for="password">Password</label>
-                        <input type="password" name="password" id="password">
+                        <input 
+                        class="<%= errors.length > 0 ? (errors.find(error => error.path ==='password') ? 'invalid' : 'valid') : '' %>"
+                        type="password" 
+                        name="password" 
+                        id="password"
+                        value="<%= oldInput.password %>">
                     </div>
 
                     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
