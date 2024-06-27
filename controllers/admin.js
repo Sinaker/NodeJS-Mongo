@@ -170,18 +170,16 @@ exports.getProducts = (req, res, next) => {
     });
 };
 
-exports.postDeleteProduct = (req, res, next) => {
-  const prodId = req.body.productId;
+exports.deleteProduct = (req, res, next) => {
+  const prodId = req.params.productId;
+
   Product.findByIdAndDelete(prodId)
     .then((product) => {
       //Make sure to delete the previous image in database
       deleteFile(product.imageUrl);
-      console.log("DESTROYED PRODUCT");
-      res.redirect("/admin/products");
+      res.status(200).json({ message: "DESTROYED PRODUCT" });
     })
     .catch((err) => {
-      const error = new Error(err);
-      error.httpStatusCode = 500;
-      next(error); //Activated error middleware
+      res.status(500).json({ message: "Failed to delete product!" });
     });
 };
